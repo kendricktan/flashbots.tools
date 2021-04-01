@@ -377,6 +377,17 @@ function App() {
                   >
                     <QuestionCircle size={15} />
                   </Tooltip>
+                  <Text type="error">
+                    Pasting sensitive information such as private keys online is
+                    not recommended. If possible, please{" "}
+                    <Link
+                      color
+                      href="http://github.com/kendricktan/flashbots.tools"
+                    >
+                      build
+                    </Link>{" "}
+                    and run this website locally.
+                  </Text>
                 </Text>
               </Input.Password>
 
