@@ -50,7 +50,7 @@ function App() {
 
   const { setVisible: setModalVisible, bindings: modalBindings } = useModal();
 
-  const [relayerURL, setRelayerURL] = useState("http://100.26.247.32");
+  const [relayerURL, setRelayerURL] = useState("https://relay.flashbots.net");
   const [blocksInTheFuture, setBlocksInTheFuture] = useState("2");
   const [compromisedPrivateKey, setCompromisedPrivateKey] = useState("");
   const [erc20Address, setERC20Address] = useState("");
