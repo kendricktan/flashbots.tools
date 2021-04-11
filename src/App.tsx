@@ -50,7 +50,7 @@ function App() {
 
   const { setVisible: setModalVisible, bindings: modalBindings } = useModal();
 
-  const [relayerURL, setRelayerURL] = useState("https://relay.flashbots.net");
+  const [relayerURL, setRelayerURL] = useState("http://3.238.87.202");
   const [blocksInTheFuture, setBlocksInTheFuture] = useState("2");
   const [compromisedPrivateKey, setCompromisedPrivateKey] = useState("");
   const [erc20Address, setERC20Address] = useState("");
@@ -356,6 +356,7 @@ function App() {
 
         <Card shadow>
           <Text h3>Gasless ERC20 Transfers</Text>
+          <Text type="warning">Only tested on native metamask accounts. Does not work with hardware wallets.</Text>
 
           <Row gap={0.8}>
             <Col>
