@@ -293,7 +293,7 @@ export function ENS({
   );
 
   return (
-    <Card shadow>
+    <Card>
       <Text h3>Gasless ENS Transfers</Text>
       <Text type="warning">
         Only tested on native metamask accounts. Does not work with hardware

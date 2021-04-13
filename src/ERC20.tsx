@@ -301,7 +301,7 @@ export function ERC20({
   );
 
   return (
-    <Card shadow>
+    <Card>
       <Text h3>Gasless ERC20 Transfers</Text>
       <Text type="warning">
         Only tested on native metamask accounts. Does not work with hardware
