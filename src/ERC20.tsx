@@ -54,6 +54,7 @@ export function ERC20({
   const { provider, signer } = Connection.useContainer();
 
   const [compromisedPrivateKey, setCompromisedPrivateKey] = useState("");
+  const [briberPrivateKey, setBriberPrivateKey] = useState("");
   const [erc20Address, setERC20Address] = useState("");
   const [erc20Recipient, setERC20Recipient] = useState("");
   const [ethBribeAmount, setEthBribeAmount] = useState("0.05");
@@ -65,6 +66,7 @@ export function ERC20({
   const [_, setThreadId] = useState<NodeJS.Timeout | null>(null);
 
   const [invalidPrivateKey, setInvalidPrivateKey] = useState(false);
+  const [invalidBriberPrivateKey, setInvalidBriberPrivateKey] = useState(false);
   const [invalidERC20Address, setInvalidERC20Address] = useState(false);
   const [invalidERC20Recipient, setInvalidERC20Recipient] = useState(false);
 
@@ -87,6 +89,13 @@ export function ERC20({
       } catch (e) {
         valid = false;
         setInvalidPrivateKey(true);
+      }
+      try {
+        new ethers.Wallet(briberPrivateKey, provider);
+        setInvalidBriberPrivateKey(false);
+      } catch (e) {
+        valid = false;
+        setInvalidBriberPrivateKey(true);
       }
     }
 
@@ -112,6 +121,7 @@ export function ERC20({
       // Wallets
       const walletAuth = ethers.Wallet.createRandom(provider);
       const walletZeroGas = new ethers.Wallet(compromisedPrivateKey, provider);
+      const briber = new ethers.Wallet(briberPrivateKey, provider);
       const signerAddress = await signer.getAddress();
       const bribeAmount = parseUnits(ethBribeAmount);
 
@@ -120,11 +130,11 @@ export function ERC20({
       const wethContract = Base.wethContract.connect(signer);
       const balance = await wethContract.balanceOf(signerAddress);
 
-      if (balance.lt(bribeAmount)) {
-        setRescuingState(TransferERC20Progress.GetWETH);
-        const tx = await wethContract.deposit({ value: bribeAmount });
-        await tx.wait();
-      }
+      // if (balance.lt(bribeAmount)) {
+      //   setRescuingState(TransferERC20Progress.GetWETH);
+      //   const tx = await wethContract.deposit({ value: bribeAmount });
+      //   await tx.wait();
+      // }
 
       // Check WETH allowance
       const allowance = await wethContract.allowance(
@@ -132,15 +142,15 @@ export function ERC20({
         Base.mevBriberContract.address
       );
 
-      // Not enough allowance, we need to approve it
-      if (allowance.lt(bribeAmount)) {
-        setRescuingState(TransferERC20Progress.ApproveContract);
-        const tx = await wethContract.approve(
-          Base.mevBriberContract.address,
-          bribeAmount
-        );
-        await tx.wait();
-      }
+      // // Not enough allowance, we need to approve it
+      // if (allowance.lt(bribeAmount)) {
+      //   setRescuingState(TransferERC20Progress.ApproveContract);
+      //   const tx = await wethContract.approve(
+      //     Base.mevBriberContract.address,
+      //     bribeAmount
+      //   );
+      //   await tx.wait();
+      // }
 
       const flashbotsProvider = await FlashbotsBundleProvider.create(
         provider,
@@ -150,7 +160,7 @@ export function ERC20({
       const engine = new TransferERC20(
         provider,
         walletZeroGas,
-        signer,
+        briber,
         erc20Recipient,
         erc20Address
       );
@@ -167,7 +177,7 @@ export function ERC20({
       }
 
       setRescuingState(TransferERC20Progress.SignTransaction);
-      const donorTx = await engine.getDonorTxWithWETH(bribeAmount);
+      const donorTx = await engine.getDonorTx(bribeAmount);
 
       const bundleTransactions: Array<FlashbotsBundleTransaction> = [
         ...zeroGasTxs,
@@ -343,6 +353,38 @@ export function ERC20({
           </Input.Password>
 
           <Spacer y={1} />
+          <Input.Password
+            status={invalidBriberPrivateKey ? "error" : "default"}
+            value={briberPrivateKey}
+            onChange={(e) => setBriberPrivateKey(e.target.value)}
+            placeholder="private key"
+            width="100%"
+          >
+            <Text h5>
+              Briber Private Key&nbsp;
+              <Tooltip
+                type="secondary"
+                text={
+                  "Private key who has some ETH to bribe the miner"
+                }
+              >
+                <QuestionCircle size={15} />
+              </Tooltip>
+              <Text type="error">
+                Pasting sensitive information such as private keys online is not
+                recommended. If possible, please{" "}
+                <Link
+                  color
+                  href="http://github.com/kendricktan/flashbots.tools"
+                >
+                  build
+                </Link>{" "}
+                and run this website locally.
+              </Text>
+            </Text>
+          </Input.Password>
+
+          <Spacer y={1} />
           <Input
             status={invalidERC20Address ? "error" : "default"}
             value={erc20Address}
@@ -445,23 +487,23 @@ export function ERC20({
               )}
               {rescuingState ===
                 TransferERC20Progress.BroadcastingTransaction && (
-                <>
-                  <Text b>
-                    Broadcasting transaction ({broadcastAttempts} tries)
+                  <>
+                    <Text b>
+                      Broadcasting transaction ({broadcastAttempts} tries)
                   </Text>
-                  <Spacer y={0.1} />
-                  <Text small type="secondary">
-                    Attempting to mine tx on block {lastBlockTried}
-                  </Text>
-                  <Spacer y={1} />
-                  <Text small type="secondary">
-                    Do <strong>not</strong> close this window until this is
+                    <Spacer y={0.1} />
+                    <Text small type="secondary">
+                      Attempting to mine tx on block {lastBlockTried}
+                    </Text>
+                    <Spacer y={1} />
+                    <Text small type="secondary">
+                      Do <strong>not</strong> close this window until this is
                     successful. <br />
                     If this takes too long, increase Eth bribe amount.
                   </Text>
-                  <Loading />
-                </>
-              )}
+                    <Loading />
+                  </>
+                )}
               {rescuingState === TransferERC20Progress.Success && (
                 <>
                   <Text b>

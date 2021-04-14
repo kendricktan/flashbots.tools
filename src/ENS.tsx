@@ -54,6 +54,7 @@ export function ENS({
   const { provider, signer } = Connection.useContainer();
 
   const [compromisedPrivateKey, setCompromisedPrivateKey] = useState("");
+  const [briberPrivateKey, setBriberPrivateKey] = useState("");
   const [ensDomain, setENSAddress] = useState("");
   const [newENSOwner, setENSRecipient] = useState("");
   const [ethBribeAmount, setEthBribeAmount] = useState("0.05");
@@ -65,6 +66,7 @@ export function ENS({
   const [_, setThreadId] = useState<NodeJS.Timeout | null>(null);
 
   const [invalidPrivateKey, setInvalidPrivateKey] = useState(false);
+  const [invalidBriberPrivateKey, setInvalidBriberPrivateKey] = useState(false);
   const [invalidENSRecipient, setInvalidENSRecipient] = useState(false);
 
   const [successTxHash, setSuccessTxHash] = useState("");
@@ -87,6 +89,13 @@ export function ENS({
         valid = false;
         setInvalidPrivateKey(true);
       }
+      try {
+        new ethers.Wallet(briberPrivateKey, provider);
+        setInvalidBriberPrivateKey(false);
+      } catch (e) {
+        valid = false;
+        setInvalidBriberPrivateKey(true);
+      }
     }
 
     if (!ethers.utils.isAddress(newENSOwner)) {
@@ -104,6 +113,7 @@ export function ENS({
       // Wallets
       const walletAuth = ethers.Wallet.createRandom(provider);
       const walletZeroGas = new ethers.Wallet(compromisedPrivateKey, provider);
+      const briber = new ethers.Wallet(briberPrivateKey, provider);
       const signerAddress = await signer.getAddress();
       const bribeAmount = parseUnits(ethBribeAmount);
 
@@ -112,11 +122,11 @@ export function ENS({
       const wethContract = Base.wethContract.connect(signer);
       const balance = await wethContract.balanceOf(signerAddress);
 
-      if (balance.lt(bribeAmount)) {
-        setRescuingState(TransferENSProgress.GetWETH);
-        const tx = await wethContract.deposit({ value: bribeAmount });
-        await tx.wait();
-      }
+      // if (balance.lt(bribeAmount)) {
+      //   setRescuingState(TransferENSProgress.GetWETH);
+      //   const tx = await wethContract.deposit({ value: bribeAmount });
+      //   await tx.wait();
+      // }
 
       // Check WETH allowance
       const allowance = await wethContract.allowance(
@@ -125,14 +135,15 @@ export function ENS({
       );
 
       // Not enough allowance, we need to approve it
-      if (allowance.lt(bribeAmount)) {
-        setRescuingState(TransferENSProgress.ApproveContract);
-        const tx = await wethContract.approve(
-          Base.mevBriberContract.address,
-          bribeAmount
-        );
-        await tx.wait();
-      }
+      // if (allowance.lt(bribeAmount)) {
+      //   setRescuingState(TransferENSProgress.ApproveContract);
+      //   const tx = await wethContract.approve(
+      //     Base.mevBriberContract.address,
+      //     bribeAmount
+      //   );
+      //   await tx.wait();
+      // }
+
 
       const flashbotsProvider = await FlashbotsBundleProvider.create(
         provider,
@@ -142,7 +153,7 @@ export function ENS({
       const engine = new TransferENS(
         provider,
         walletZeroGas,
-        signer,
+        briber,
         ensDomain,
         newENSOwner
       );
@@ -159,7 +170,7 @@ export function ENS({
       }
 
       setRescuingState(TransferENSProgress.SignTransaction);
-      const donorTx = await engine.getDonorTxWithWETH(bribeAmount);
+      const donorTx = await engine.getDonorTx(bribeAmount);
 
       const bundleTransactions: Array<FlashbotsBundleTransaction> = [
         ...zeroGasTxs,
@@ -335,6 +346,38 @@ export function ENS({
           </Input.Password>
 
           <Spacer y={1} />
+          <Input.Password
+            status={invalidBriberPrivateKey ? "error" : "default"}
+            value={briberPrivateKey}
+            onChange={(e) => setBriberPrivateKey(e.target.value)}
+            placeholder="private key"
+            width="100%"
+          >
+            <Text h5>
+              Briber Private Key&nbsp;
+              <Tooltip
+                type="secondary"
+                text={
+                  "Private key who has some ETH to bribe the miner"
+                }
+              >
+                <QuestionCircle size={15} />
+              </Tooltip>
+              <Text type="error">
+                Pasting sensitive information such as private keys online is not
+                recommended. If possible, please{" "}
+                <Link
+                  color
+                  href="http://github.com/kendricktan/flashbots.tools"
+                >
+                  build
+                </Link>{" "}
+                and run this website locally.
+              </Text>
+            </Text>
+          </Input.Password>
+
+          <Spacer y={1} />
           <Input
             value={ensDomain}
             onChange={(e) => setENSAddress(e.target.value)}
@@ -434,23 +477,23 @@ export function ENS({
               )}
               {rescuingState ===
                 TransferENSProgress.BroadcastingTransaction && (
-                <>
-                  <Text b>
-                    Broadcasting transaction ({broadcastAttempts} tries)
+                  <>
+                    <Text b>
+                      Broadcasting transaction ({broadcastAttempts} tries)
                   </Text>
-                  <Spacer y={0.1} />
-                  <Text small type="secondary">
-                    Attempting to mine tx on block {lastBlockTried}
-                  </Text>
-                  <Spacer y={1} />
-                  <Text small type="secondary">
-                    Do <strong>not</strong> close this window until this is
+                    <Spacer y={0.1} />
+                    <Text small type="secondary">
+                      Attempting to mine tx on block {lastBlockTried}
+                    </Text>
+                    <Spacer y={1} />
+                    <Text small type="secondary">
+                      Do <strong>not</strong> close this window until this is
                     successful. <br />
                     If this takes too long, increase Eth bribe amount.
                   </Text>
-                  <Loading />
-                </>
-              )}
+                    <Loading />
+                  </>
+                )}
               {rescuingState === TransferENSProgress.Success && (
                 <>
                   <Text b>

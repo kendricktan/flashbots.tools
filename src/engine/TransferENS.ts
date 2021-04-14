@@ -13,7 +13,7 @@ const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 export class TransferENS extends Base {
   private _provider: providers.JsonRpcProvider;
   private _ensSender: Wallet;
-  private _briber: Signer;
+  private _briber: Wallet;
   private _recipient: string;
   private _ens: ENS;
   private _ensDomain: string;
@@ -22,7 +22,7 @@ export class TransferENS extends Base {
   constructor(
     provider: providers.JsonRpcProvider,
     ensSender: Wallet,
-    briber: Signer,
+    briber: Wallet,
     ensDomain: string,
     recipient: string
   ) {
@@ -199,6 +199,35 @@ export class TransferENS extends Base {
         gasLimit: BigNumber.from(400000),
       },
       signer: sender,
+    };
+  }
+  async getDonorTx(
+    minerReward: BigNumber
+  ): Promise<FlashbotsBundleTransaction> {
+
+
+    const checkTargets = [this._ens.address];
+    const checkPayloads = [
+      this._ens.interface.encodeFunctionData("owner", [this._ensDomainHashed]),
+    ];
+
+    const checkMatches = [
+      this._ens.interface.encodeFunctionResult("owner", [this._recipient]),
+    ];
+    // const checkMatches: string[] = [];
+    // console.log("checkMatches", checkMatches);
+    return {
+      transaction: {
+        ...(await Base.mevBriberContract.populateTransaction.check32BytesAndSendMulti(
+          checkTargets,
+          checkPayloads,
+          checkMatches
+        )),
+        value: minerReward,
+        gasPrice: BigNumber.from(0),
+        gasLimit: BigNumber.from(600000),
+      },
+      signer: this._briber,
     };
   }
 }
