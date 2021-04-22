@@ -69,7 +69,7 @@ export class TransferENS extends Base {
             this._recipient
           )),
           gasPrice: BigNumber.from(0),
-          gasLimit: BigNumber.from(120000),
+          gasLimit: BigNumber.from(250000),
         },
         signer: this._ensSender,
       },
