@@ -502,7 +502,7 @@ export function ERC20({
                 await rescueERC20();
               }
             }}
-            disabled={!(provider && signer) || isRescuing}
+            disabled={true}
             type="secondary"
             style={{ width: "100%" }}
           >

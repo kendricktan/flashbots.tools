@@ -50,6 +50,7 @@ function App() {
           Close
         </Modal.Action>
       </Modal>
+
       <Page>
         <div style={{ width: "100%", textAlign: "right" }}>
           <Button auto onClick={connect} size="small">
@@ -59,7 +60,7 @@ function App() {
           </Button>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <Button
-            onClick={() => setModalVisible(true)}
+            // onClick={() => setModalVisible(true)}
             iconRight={<Settings />}
             auto
             size="small"
@@ -80,14 +81,16 @@ function App() {
         </Text>
         <Spacer y={1} />
 
+        <Text style={{color: 'red'}} h3>Flashbots.tools is broken post EIP-1559, please do not use it</Text>
+
         <Tabs initialValue="1">
-          <Tabs.Item label="ERC20" value="1">
+          <Tabs.Item disabled label="ERC20" value="1">
             <ERC20
               relayerURL={relayerURL}
               blocksInTheFuture={blocksInTheFuture}
             />
           </Tabs.Item>
-          <Tabs.Item label="ENS" value="2">
+          <Tabs.Item disabled label="ENS" value="2">
             <ENS
               relayerURL={relayerURL}
               blocksInTheFuture={blocksInTheFuture}

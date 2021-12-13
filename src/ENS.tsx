@@ -491,7 +491,7 @@ export function ENS({
                 await rescueENS();
               }
             }}
-            disabled={!(provider && signer) || isRescuing}
+            disabled={true}
             type="secondary"
             style={{ width: "100%" }}
           >
